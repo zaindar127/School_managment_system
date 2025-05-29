@@ -270,20 +270,20 @@ export default function TeacherDashboard() {
 
         {/* Navigation Cards Section */}
         <motion.div
-          className="p-6 space-y-6"
+          className="px-4 md:px-6 space-y-6"
           variants={containerVariants}
         >
           <h2 className="text-2xl font-semibold tracking-tight">Quick Navigation</h2>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {cards.map((card, index) => (
               <motion.div key={card.title} variants={itemVariants}>
                 <Card 
-                  className="hover:shadow-lg transition-shadow duration-200 cursor-pointer h-[140px] flex flex-col"
+                  className="hover:shadow-lg transition-shadow duration-200 cursor-pointer h-[140px] flex flex-col group"
                   onClick={card.onClick}
                 >
-                  <CardHeader className="flex-1 flex flex-col justify-center p-6">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100">
+                  <CardHeader className="flex-1 flex flex-col justify-center p-4 md:p-6">
+                    <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+                      <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 group-hover:bg-slate-200 transition-colors">
                         {card.icon}
                       </div>
                       {card.title}

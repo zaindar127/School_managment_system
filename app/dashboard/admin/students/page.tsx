@@ -163,40 +163,8 @@ export default function StudentsPage() {
         </Link>
       </motion.div>
 
-      {/* Student List with Tabs */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="bg-white dark:bg-gray-950 rounded-lg shadow-sm border"
-      >
-        <Tabs defaultValue="all" className="w-full">
-          <div className="border-b">
-            <TabsList className="p-2 bg-transparent">
-              <TabsTrigger value="all">All Students</TabsTrigger>
-              <TabsTrigger value="active">Active</TabsTrigger>
-              <TabsTrigger value="new">New Admissions</TabsTrigger>
-              <TabsTrigger value="graduated">Graduated</TabsTrigger>
-            </TabsList>
-          </div>
-          
-          <TabsContent value="all" className="mt-0 p-4">
-            <StudentsList />
-          </TabsContent>
-          
-          <TabsContent value="active" className="mt-0 p-4">
-            <StudentsList />
-          </TabsContent>
-          
-          <TabsContent value="new" className="mt-0 p-4">
-            <StudentsList />
-          </TabsContent>
-          
-          <TabsContent value="graduated" className="mt-0 p-4">
-            <StudentsList />
-          </TabsContent>
-        </Tabs>
-      </motion.div>
+      {/* Student List */}
+      <StudentsList />
     </motion.div>
   )
 }

@@ -75,15 +75,17 @@ export default function DashboardLayout({
   // For admin and teacher dashboards, show sidebar
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      {!isStudentDashboard && (
+        <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      )}
       <div
         className={cn(
           "flex flex-col flex-1 overflow-hidden transition-all duration-300",
-          isCollapsed ? "lg:ml-16" : "lg:ml-64",
+          !isStudentDashboard && (isCollapsed ? "lg:ml-16" : "lg:ml-64")
         )}
       >
         <Header />
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">{children}</main>
+        <main className="flex-1 overflow-y-auto px-4 md:px-8 py-6 md:py-8">{children}</main>
         <Toaster />
       </div>
     </div>

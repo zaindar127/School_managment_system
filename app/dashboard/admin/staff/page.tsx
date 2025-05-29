@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { StaffList } from "@/components/staff-list"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { PlusCircle, Users, GraduationCap, UserCheck, Calendar, Search } from "lucide-react"
@@ -15,7 +14,6 @@ import { Input } from "@/components/ui/input"
 export default function StaffPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
-  const [activeTab, setActiveTab] = useState("all")
 
   // Simulate loading state
   useEffect(() => {
@@ -25,14 +23,6 @@ export default function StaffPage() {
     
     return () => clearTimeout(timer)
   }, [])
-
-  // Map tab values to role filters
-  const roleFilterMap: Record<string, string> = {
-    all: "all",
-    teachers: "teacher",
-    administration: "admin",
-    support: "staff"
-  }
 
   if (loading) {
     return <StaffPageSkeleton />
@@ -139,41 +129,7 @@ export default function StaffPage() {
         </Link>
       </motion.div>
 
-      {/* Staff List with Tabs */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-      >
-        <Tabs 
-          defaultValue="all" 
-          className="w-full"
-          onValueChange={(value) => setActiveTab(value)}
-        >
-          <TabsList className="mb-4">
-            <TabsTrigger value="all">All Staff</TabsTrigger>
-            <TabsTrigger value="teachers">Teachers</TabsTrigger>
-            <TabsTrigger value="administration">Administration</TabsTrigger>
-            <TabsTrigger value="support">Support Staff</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="all" className="mt-0 space-y-4">
-            <StaffList searchQuery={searchQuery} filterRole={roleFilterMap[activeTab]} />
-          </TabsContent>
-          
-          <TabsContent value="teachers" className="mt-0 space-y-4">
-            <StaffList searchQuery={searchQuery} filterRole={roleFilterMap[activeTab]} />
-          </TabsContent>
-          
-          <TabsContent value="administration" className="mt-0 space-y-4">
-            <StaffList searchQuery={searchQuery} filterRole={roleFilterMap[activeTab]} />
-          </TabsContent>
-          
-          <TabsContent value="support" className="mt-0 space-y-4">
-            <StaffList searchQuery={searchQuery} filterRole={roleFilterMap[activeTab]} />
-          </TabsContent>
-        </Tabs>
-      </motion.div>
+      <StaffList searchQuery={searchQuery} filterRole="all" />
     </motion.div>
   )
 }

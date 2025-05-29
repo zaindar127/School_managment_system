@@ -202,20 +202,22 @@ export function FeeManagement() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="collection" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="collection" className="text-base">
-                <FileText className="h-4 w-4 mr-2" />
-                Fee Collection
-              </TabsTrigger>
-              <TabsTrigger value="types" className="text-base">
-                <DollarSign className="h-4 w-4 mr-2" />
-                Fee Types
-              </TabsTrigger>
-              <TabsTrigger value="reports" className="text-base">
-                <Printer className="h-4 w-4 mr-2" />
-                Fee Reports
-              </TabsTrigger>
-            </TabsList>
+            <div className="flex w-full overflow-x-auto mb-6">
+              <TabsList className="inline-flex h-10 items-center justify-center rounded-md p-1 text-muted-foreground bg-muted">
+                <TabsTrigger value="collection" className="inline-flex items-center justify-center whitespace-nowrap px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Fee Collection
+                </TabsTrigger>
+                <TabsTrigger value="types" className="inline-flex items-center justify-center whitespace-nowrap px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Fee Types
+                </TabsTrigger>
+                <TabsTrigger value="reports" className="inline-flex items-center justify-center whitespace-nowrap px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                  <Printer className="h-4 w-4 mr-2" />
+                  Fee Reports
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="collection" className="space-y-4 pt-4">
               <motion.div

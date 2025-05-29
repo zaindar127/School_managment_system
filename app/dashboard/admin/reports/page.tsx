@@ -1,17 +1,15 @@
 "use client"
 
-import { FileBarChart, Download, FileUp, FileDown, BarChart, PieChart, GraduationCap, CreditCard, Users, Calendar, Clock, ChevronRight, CheckCircle2 } from "lucide-react"
+import { FileBarChart, Download, FileUp, Clock, CheckCircle2 } from "lucide-react"
 import { ReportsManagement } from "@/components/reports-management"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 
 export default function ReportsPage() {
   const [mounted, setMounted] = useState(false)
-  const [activeTab, setActiveTab] = useState("overview")
   const [showTip, setShowTip] = useState(true)
 
   useEffect(() => {
@@ -67,7 +65,7 @@ export default function ReportsPage() {
 
   return (
     <motion.div 
-      className="space-y-6"
+      className="space-y-6 px-4 md:px-6 py-6"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
@@ -115,7 +113,7 @@ export default function ReportsPage() {
               Generate and analyze comprehensive reports for your school
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <motion.div 
               whileHover={{ scale: 1.05 }} 
               whileTap={{ scale: 0.98 }}
@@ -170,114 +168,42 @@ export default function ReportsPage() {
         )}
       </AnimatePresence>
 
-      {/* Quick Stats with staggered animation */}
-      <motion.div 
-        variants={itemVariants}
-        className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
-      >
-        {[
-          { title: "Total Students", icon: Users, value: "183", change: "+12 from last month", color: "bg-blue-50 text-blue-600" },
-          { title: "Attendance Rate", icon: Calendar, value: "89.2%", change: "+2.1% from last month", color: "bg-emerald-50 text-emerald-600" },
-          { title: "Fee Collection", icon: CreditCard, value: "₹283,489", change: "+₹42,938 from last month", color: "bg-purple-50 text-purple-600" },
-          { title: "Staff Members", icon: GraduationCap, value: "34", change: "+2 from last month", color: "bg-amber-50 text-amber-600" }
-        ].map((stat, index) => (
-          <motion.div 
-            key={index}
-            variants={itemVariants}
-            whileHover={{ 
-              y: -5,
-              transition: { 
-                type: "spring", 
-                stiffness: 400, 
-                damping: 10 
-              }
-            }}
-          >
-            <Card className="border shadow-sm hover:shadow-md transition-all overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <motion.div
-                  initial={{ rotate: 0 }}
-                  whileHover={{ rotate: 15, scale: 1.2 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  className={`p-2 rounded-full ${stat.color.split(' ')[0]}/10`}
-                >
-                  <stat.icon className={`h-4 w-4 ${stat.color.split(' ')[1]}`} />
-                </motion.div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {stat.change}
-                </p>
-              </CardContent>
-              {/* Progress indicator */}
-              <div className="h-1 w-full bg-muted/30">
-                <motion.div 
-                  className={`h-full ${stat.color.split(' ')[0]}/70`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${70 + Math.random() * 30}%` }}
-                  transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
-                />
-              </div>
-            </Card>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* Report Tabs Section */}
+      {/* Reports Section */}
       <motion.div variants={itemVariants}>
-        <Tabs 
-          defaultValue="overview" 
-          className="space-y-4"
-          onValueChange={setActiveTab}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
         >
-          <TabsList className="grid grid-cols-4 mb-2">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="academic">Academic</TabsTrigger>
-            <TabsTrigger value="financial">Financial</TabsTrigger>
-            <TabsTrigger value="staff">Staff</TabsTrigger>
-          </TabsList>
-          
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Card className="border shadow-md overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b">
-                  <div className="flex flex-row items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <motion.div
-                        animate={{ 
-                          rotate: [0, 10, 0],
-                          scale: [1, 1.1, 1],
-                        }}
-                        transition={{ 
-                          duration: 2,
-                          repeat: Infinity, 
-                          repeatType: "reverse"
-                        }}
-                      >
-                        <FileBarChart className="h-5 w-5 text-primary" />
-                      </motion.div>
-                      <CardTitle>School Reports</CardTitle>
-                    </div>
-                  </div>
-                  <CardDescription>
-                    Generate comprehensive reports for all aspects of school management
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <ReportsManagement />
-                </CardContent>
-              </Card>
-            </motion.div>
-          </AnimatePresence>
-        </Tabs>
+          <Card className="border shadow-md overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b">
+              <div className="flex flex-row items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <motion.div
+                    animate={{ 
+                      rotate: [0, 10, 0],
+                      scale: [1, 1.1, 1],
+                    }}
+                    transition={{ 
+                      duration: 2,
+                      repeat: Infinity, 
+                      repeatType: "reverse"
+                    }}
+                  >
+                    <FileBarChart className="h-5 w-5 text-primary" />
+                  </motion.div>
+                  <CardTitle>School Reports</CardTitle>
+                </div>
+              </div>
+              <CardDescription>
+                Generate comprehensive reports for all aspects of school management
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ReportsManagement />
+            </CardContent>
+          </Card>
+        </motion.div>
       </motion.div>
     </motion.div>
   )

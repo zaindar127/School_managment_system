@@ -109,13 +109,15 @@ export default function ClassesPage() {
       </div>
 
       <Dialog open={showBookDialog} onOpenChange={setShowBookDialog}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+          <DialogHeader className="sticky top-0 z-10 bg-background px-6 py-4 border-b">
             <DialogTitle>Manage Books</DialogTitle>
           </DialogHeader>
-          <BookManagement />
+          <div className="px-6 py-4">
+            <BookManagement />
+          </div>
         </DialogContent>
       </Dialog>
     </motion.div>
   )
-} 
+}

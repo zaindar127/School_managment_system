@@ -228,13 +228,12 @@ export function VoucherManagement() {
                         </FormItem>
                       )}
                     />
-                  </div>
-                  <div className="flex justify-end space-x-4">
-                    <Button type="button" variant="outline">
+                  </div>                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6">
+                    <Button type="button" variant="outline" className="w-full sm:w-auto order-2 sm:order-1">
                       <Printer className="mr-2 h-4 w-4" />
                       Print Voucher
                     </Button>
-                    <Button type="submit">
+                    <Button type="submit" className="w-full sm:w-auto order-1 sm:order-2">
                       <Save className="mr-2 h-4 w-4" />
                       Generate Voucher
                     </Button>

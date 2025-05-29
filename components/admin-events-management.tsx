@@ -45,64 +45,52 @@ export function AdminEventsManagement() {
   })
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
 
-  // Load events from localStorage on component mount
+  // Load demo events on component mount
   useEffect(() => {
-    const storedEvents = localStorage.getItem("schoolEvents")
-    if (storedEvents) {
-      setEvents(JSON.parse(storedEvents))
-    } else {
-      // Set some example events if none exist
-      const exampleEvents: Event[] = [
-        {
-          id: 1,
-          title: "Final Term Exams",
-          date: "2024-05-15",
-          description: "End of term examinations for all classes",
-          type: "exam" as const
-        },
-        {
-          id: 2,
-          title: "Parent-Teacher Meeting",
-          date: "2024-05-20",
-          description: "Discussing student progress with parents",
-          type: "meeting" as const
-        },
-        {
-          id: 3,
-          title: "Annual Sports Day",
-          date: "2024-05-25",
-          description: "School-wide sports competitions",
-          type: "celebration" as const
-        }
-      ]
-      setEvents(exampleEvents)
-      localStorage.setItem("schoolEvents", JSON.stringify(exampleEvents))
-    }
+    // Demo events data - this will be replaced with API call later
+    const demoEvents: Event[] = [
+      {
+        id: 1,
+        title: "Final Term Exams",
+        date: "2024-05-15",
+        description: "End of term examinations for all classes",
+        type: "exam" as const
+      },
+      {
+        id: 2,
+        title: "Parent-Teacher Meeting",
+        date: "2024-05-20",
+        description: "Discussing student progress with parents",
+        type: "meeting" as const
+      },
+      {
+        id: 3,
+        title: "Annual Sports Day",
+        date: "2024-05-25",
+        description: "School-wide sports competitions",
+        type: "celebration" as const
+      }
+    ]
     
-    // Simulate loading
+    // Simulate API loading
     const timer = setTimeout(() => {
+      setEvents(demoEvents)
       setLoading(false)
     }, 1000)
     
     return () => clearTimeout(timer)
   }, [])
-
-  // Save events to localStorage whenever they change
-  useEffect(() => {
-    if (!loading) {
-      localStorage.setItem("schoolEvents", JSON.stringify(events))
-    }
-  }, [events, loading])
-
   const handleAddEvent = () => {
     if (!newEvent.title || !newEvent.date) {
       toast.error("Please fill in all required fields")
       return
     }
 
+    // In a real application, this would be an API call
     const newId = events.length > 0 ? Math.max(...events.map(e => e.id)) + 1 : 1
     const eventToAdd = { ...newEvent, id: newId }
     
+    // Update local state (would be handled by API response in production)
     setEvents([...events, eventToAdd])
     setShowAddDialog(false)
     setNewEvent({
@@ -112,12 +100,13 @@ export function AdminEventsManagement() {
       type: "other"
     })
     
-    toast.success("Event added successfully")
+    toast.success("Event added successfully (Demo Mode)")
   }
 
   const handleDeleteEvent = (id: number) => {
+    // In a real application, this would be an API call
     setEvents(events.filter(event => event.id !== id))
-    toast.success("Event deleted successfully")
+    toast.success("Event deleted successfully (Demo Mode)")
   }
 
   const getEventTypeColor = (type: string) => {
@@ -141,9 +130,8 @@ export function AdminEventsManagement() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Card className="shadow-sm hover:shadow-md transition-all duration-300">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+      <Card className="shadow-sm hover:shadow-md transition-all duration-300">        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <CardTitle className="text-2xl font-bold">Events Management</CardTitle>
               <CardDescription>Manage school events and important dates</CardDescription>
@@ -151,9 +139,9 @@ export function AdminEventsManagement() {
             
             <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
               <DialogTrigger asChild>
-                <Button className="gap-1">
-                  <Plus className="h-4 w-4" />
-                  Add Event
+                <Button className="gap-1 w-full sm:w-auto">
+                  <Plus className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Add Event</span>
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -248,15 +236,14 @@ export function AdminEventsManagement() {
         </CardHeader>
         
         <CardContent>
-          <Tabs defaultValue="upcoming" className="w-full">
-            <TabsList className="mb-6">
-              <TabsTrigger value="upcoming">
-                <Calendar className="h-4 w-4 mr-2" />
-                Upcoming Events
+          <Tabs defaultValue="upcoming" className="w-full">            <TabsList className="mb-6 w-full sm:w-auto grid grid-cols-2 sm:grid-cols-none sm:flex gap-2">
+              <TabsTrigger value="upcoming" className="flex items-center justify-center gap-2">
+                <Calendar className="h-4 w-4 shrink-0" />
+                <span className="truncate">Upcoming Events</span>
               </TabsTrigger>
-              <TabsTrigger value="all">
-                <ClipboardList className="h-4 w-4 mr-2" />
-                All Events
+              <TabsTrigger value="all" className="flex items-center justify-center gap-2">
+                <ClipboardList className="h-4 w-4 shrink-0" />
+                <span className="truncate">All Events</span>
               </TabsTrigger>
             </TabsList>
             
@@ -273,33 +260,36 @@ export function AdminEventsManagement() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, x: -10 }}
                         transition={{ duration: 0.3 }}
-                      >
-                        <Card className="hover:shadow-md transition-all duration-300">
-                          <CardContent className="p-4 flex justify-between items-start">
-                            <div className="flex gap-4">
-                              <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary">
-                                <Calendar className="h-6 w-6" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-semibold text-lg">{event.title}</h3>
-                                  <Badge variant="outline" className={getEventTypeColor(event.type)}>
-                                    {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
-                                  </Badge>
+                      >                        <Card className="hover:shadow-md transition-all duration-300">
+                          <CardContent className="p-4">
+                            <div className="flex flex-col sm:flex-row sm:justify-between gap-4 w-full">
+                              <div className="flex flex-1 min-w-0">
+                                <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0 mr-4">
+                                  <Calendar className="h-6 w-6" />
                                 </div>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {format(new Date(event.date), "MMMM d, yyyy")}
-                                </p>
-                                <p className="text-sm mt-2">{event.description}</p>
+                                <div className="flex-1 min-w-0 overflow-hidden">
+                                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                                    <h3 className="font-semibold text-lg truncate max-w-full sm:max-w-[300px]">{event.title}</h3>
+                                    <Badge variant="outline" className={`${getEventTypeColor(event.type)} shrink-0`}>
+                                      {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    {format(new Date(event.date), "MMMM d, yyyy")}
+                                  </p>
+                                  <p className="text-sm mt-2 line-clamp-2 text-ellipsis overflow-hidden">{event.description}</p>
+                                </div>
+                              </div>
+                              <div className="shrink-0 self-start sm:self-center">
+                                <Button 
+                                  variant="destructive" 
+                                  size="icon"
+                                  onClick={() => handleDeleteEvent(event.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
                             </div>
-                            <Button 
-                              variant="destructive" 
-                              size="icon"
-                              onClick={() => handleDeleteEvent(event.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
                           </CardContent>
                         </Card>
                       </motion.div>
@@ -329,46 +319,49 @@ export function AdminEventsManagement() {
                         exit={{ opacity: 0, x: -10 }}
                         transition={{ duration: 0.3 }}
                         className={
-                          new Date(event.date) < new Date() 
-                            ? "opacity-70" 
+                          new Date(event.date) < new Date()
+                            ? "opacity-70"
                             : ""
                         }
-                      >
-                        <Card className="hover:shadow-md transition-all duration-300">
-                          <CardContent className="p-4 flex justify-between items-start">
-                            <div className="flex gap-4">
-                              <div className={`h-12 w-12 rounded-md flex items-center justify-center ${
-                                new Date(event.date) < new Date()
-                                  ? "bg-gray-200 text-gray-500"
-                                  : "bg-primary/10 text-primary"
-                              }`}>
-                                <Calendar className="h-6 w-6" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-semibold text-lg">{event.title}</h3>
-                                  <Badge variant="outline" className={getEventTypeColor(event.type)}>
-                                    {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
-                                  </Badge>
-                                  {new Date(event.date) < new Date() && (
-                                    <Badge variant="outline" className="bg-gray-100 text-gray-700">
-                                      Past
-                                    </Badge>
-                                  )}
+                      >                        <Card className="hover:shadow-md transition-all duration-300">
+                          <CardContent className="p-4">
+                            <div className="flex flex-col sm:flex-row sm:justify-between gap-4 w-full">
+                              <div className="flex flex-1 min-w-0">
+                                <div className={`h-12 w-12 rounded-md flex items-center justify-center shrink-0 mr-4 ${
+                                  new Date(event.date) < new Date()
+                                    ? "bg-gray-200 text-gray-500"
+                                    : "bg-primary/10 text-primary"
+                                }`}>
+                                  <Calendar className="h-6 w-6" />
                                 </div>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {format(new Date(event.date), "MMMM d, yyyy")}
-                                </p>
-                                <p className="text-sm mt-2">{event.description}</p>
+                                <div className="flex-1 min-w-0 overflow-hidden">
+                                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                                    <h3 className="font-semibold text-lg truncate max-w-full sm:max-w-[300px]">{event.title}</h3>
+                                    <Badge variant="outline" className={`${getEventTypeColor(event.type)} shrink-0`}>
+                                      {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+                                    </Badge>
+                                    {new Date(event.date) < new Date() && (
+                                      <Badge variant="outline" className="bg-gray-100 text-gray-700 shrink-0">
+                                        Past
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    {format(new Date(event.date), "MMMM d, yyyy")}
+                                  </p>
+                                  <p className="text-sm mt-2 line-clamp-2 text-ellipsis overflow-hidden">{event.description}</p>
+                                </div>
+                              </div>
+                              <div className="shrink-0 self-start sm:self-center">
+                                <Button 
+                                  variant="destructive" 
+                                  size="icon"
+                                  onClick={() => handleDeleteEvent(event.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
                             </div>
-                            <Button 
-                              variant="destructive" 
-                              size="icon"
-                              onClick={() => handleDeleteEvent(event.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
                           </CardContent>
                         </Card>
                       </motion.div>
@@ -398,4 +391,4 @@ export function AdminEventsManagement() {
       </Card>
     </motion.div>
   )
-} 
+}

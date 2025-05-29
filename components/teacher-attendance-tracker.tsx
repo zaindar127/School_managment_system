@@ -15,6 +15,7 @@ import { generatePDF } from "@/lib/pdf-generator"
 import { useToast } from "@/components/ui/use-toast"
 import { motion } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 export function TeacherAttendanceTracker({ className }: { className: string }) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -123,12 +124,12 @@ export function TeacherAttendanceTracker({ className }: { className: string }) {
       transition={{ duration: 0.5 }}
     >
       <Card className="shadow-sm hover:shadow transition-all duration-200 border-t-4 border-t-primary border-l-0 border-r-0 border-b-0">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 gap-4">
           <div>
             <CardTitle>Attendance Tracker</CardTitle>
             <CardDescription>Record daily attendance for Class {className}</CardDescription>
           </div>
-          <Button onClick={handleGenerateAttendanceReport} variant="outline" className="gap-2">
+          <Button onClick={handleGenerateAttendanceReport} variant="outline" className="gap-2 w-full sm:w-auto">
             <FileText className="h-4 w-4" />
             Generate Report
           </Button>
@@ -140,14 +141,14 @@ export function TeacherAttendanceTracker({ className }: { className: string }) {
               <TabsTrigger value="history">View History</TabsTrigger>
             </TabsList>
             <TabsContent value="mark" className="space-y-4 pt-4">
-              <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <div>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant={"outline"}
                         className={cn(
-                          "w-[240px] justify-start text-left font-normal",
+                          "w-full sm:w-[240px] justify-start text-left font-normal",
                           !selectedDate && "text-muted-foreground",
                         )}
                       >
@@ -167,13 +168,13 @@ export function TeacherAttendanceTracker({ className }: { className: string }) {
                 </div>
               </div>
 
-              <div className="rounded-md border mb-6 overflow-hidden">
+              <div className="overflow-x-auto rounded-md border">
                 <Table>
                   <TableHeader className="bg-muted/50">
                     <TableRow>
                       <TableHead className="w-[100px]">ID</TableHead>
                       <TableHead>Name</TableHead>
-                      <TableHead className="w-[180px]">Status</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -182,18 +183,31 @@ export function TeacherAttendanceTracker({ className }: { className: string }) {
                         key={student.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        transition={{ delay: index * 0.03 }}
                         className="group"
                       >
                         <TableCell className="font-medium">{student.id}</TableCell>
-                        <TableCell>{student.name}</TableCell>
                         <TableCell>
-                          <Select
-                            defaultValue={student.status}
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={student.avatar} alt={student.name} />
+                              <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                {student.name.split(' ').map((word: string) => word[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{student.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Select 
+                            value={student.status} 
                             onValueChange={(value) => handleStatusChange(student.id, value)}
                           >
-                            <SelectTrigger className={cn("w-[140px]", getStatusClass(student.status))}>
-                              <SelectValue />
+                            <SelectTrigger className={cn(
+                              "w-full justify-center",
+                              getStatusClass(student.status)
+                            )}>
+                              <SelectValue placeholder="Select status" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="present" className="flex items-center">
@@ -217,40 +231,31 @@ export function TeacherAttendanceTracker({ className }: { className: string }) {
                 </Table>
               </div>
 
-              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div className="flex gap-4 flex-wrap">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+                <div className="flex flex-wrap gap-4 justify-center sm:justify-start w-full sm:w-auto">
                   <Badge
                     variant="outline"
                     className="bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300 text-sm py-2 px-4"
                   >
-                    <Check className="mr-2 h-4 w-4" />
                     Present: {presentCount}
                   </Badge>
-                  <Badge
+                  <Badge 
                     variant="outline"
                     className="bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-300 text-sm py-2 px-4"
                   >
-                    <X className="mr-2 h-4 w-4" />
                     Absent: {absentCount}
                   </Badge>
                   <Badge
                     variant="outline"
                     className="bg-amber-50 text-amber-700 dark:bg-amber-900 dark:text-amber-300 text-sm py-2 px-4"
                   >
-                    <Clock className="mr-2 h-4 w-4" />
                     Leave: {leaveCount}
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-sm py-2 px-4"
-                  >
-                    Total: {attendanceData.length}
                   </Badge>
                 </div>
                 <Button 
                   onClick={handleSaveAttendance} 
                   disabled={isLoading}
-                  className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transition-all duration-200"
+                  className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white transition-all duration-200"
                 >
                   {isLoading ? (
                     <>
@@ -267,7 +272,7 @@ export function TeacherAttendanceTracker({ className }: { className: string }) {
               </div>
             </TabsContent>
             <TabsContent value="history">
-              <div className="h-[200px] flex items-center justify-center">
+              <div className="min-h-[200px] flex items-center justify-center">
                 <p className="text-muted-foreground">Attendance history will be shown here</p>
               </div>
             </TabsContent>
