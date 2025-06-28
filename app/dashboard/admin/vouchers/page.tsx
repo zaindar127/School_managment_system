@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { VoucherManagement } from "@/components/voucher-management"
+import { ExpensesManagement } from "@/components/expenses-management"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -11,10 +11,12 @@ import {
   FileText, 
   PieChart, 
   FileCheck, 
-  Clock 
+  Clock,
+  DollarSign,
+  TrendingUp
 } from "lucide-react"
 
-export default function VouchersPage() {
+export default function ExpensesPage() {
   const [loading, setLoading] = useState(true)
 
   // Simulate loading state
@@ -27,7 +29,7 @@ export default function VouchersPage() {
   }, [])
 
   if (loading) {
-    return <VouchersPageSkeleton />
+    return <ExpensesPageSkeleton />
   }
 
   return (
@@ -39,7 +41,7 @@ export default function VouchersPage() {
     >
       {/* Header */}
       <motion.div 
-        className="relative overflow-hidden bg-gradient-to-r from-indigo-600 to-violet-700 rounded-xl p-8 shadow-lg"
+        className="relative overflow-hidden bg-gradient-to-r from-emerald-600 to-teal-700 rounded-xl p-8 shadow-lg"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
@@ -52,7 +54,7 @@ export default function VouchersPage() {
               transition: { duration: 60, repeat: Infinity, ease: "linear" }
             }}
           >
-            <Receipt className="h-64 w-64 -mt-20 -mr-20" />
+            <DollarSign className="h-64 w-64 -mt-20 -mr-20" />
           </motion.div>
         </div>
         
@@ -63,19 +65,19 @@ export default function VouchersPage() {
               transition: { duration: 80, repeat: Infinity, ease: "linear" }
             }}
           >
-            <FileText className="h-48 w-48" />
+            <Receipt className="h-48 w-48" />
           </motion.div>
         </div>
         
         <div className="relative z-10">
           <Badge className="bg-white/20 text-white hover:bg-white/30 px-3 py-1 mb-3">
-            Documentation
+            Financial Management
           </Badge>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white mb-2">
-            Voucher Management
+            Expenses Management
           </h1>
-          <p className="text-indigo-100 max-w-2xl">
-            Create, track, and manage vouchers for various financial transactions and maintain proper documentation for your institution.
+          <p className="text-emerald-100 max-w-2xl">
+            Track, manage, and approve institutional expenses. Add new expenses, view records, and generate receipts for all financial transactions.
           </p>
         </div>
       </motion.div>
@@ -87,52 +89,52 @@ export default function VouchersPage() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <VoucherStatCard 
-          title="Total Vouchers"
-          value="243"
+        <ExpenseStatCard 
+          title="Total Expenses"
+          value="₹78,500"
           description="Current month"
-          icon={Receipt}
-          color="indigo"
+          icon={DollarSign}
+          color="emerald"
         />
-        <VoucherStatCard 
+        <ExpenseStatCard 
           title="Pending Approvals"
-          value="18"
-          description="Require verification"
+          value="2"
+          description="Awaiting review"
           icon={Clock}
           color="amber"
         />
-        <VoucherStatCard 
+        <ExpenseStatCard 
           title="Approved"
-          value="195"
+          value="2"
           description="80% of total"
           icon={FileCheck}
           color="green"
         />
-        <VoucherStatCard 
-          title="Expenditure"
+        <ExpenseStatCard 
+          title="This Month"
           value="₹78,500"
-          description="This month"
-          icon={PieChart}
+          description="Total expenditure"
+          icon={TrendingUp}
           color="blue"
         />
       </motion.div>
 
-      {/* Voucher Management Component */}
+      {/* Expenses Management Component */}
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.2 }}
         className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden"
       >
-        <VoucherManagement />
+        <ExpensesManagement />
       </motion.div>
     </motion.div>
   )
 }
 
-function VoucherStatCard({ title, value, description, icon: Icon, color }: any) {
+function ExpenseStatCard({ title, value, description, icon: Icon, color }: any) {
   const colorClasses = {
-    indigo: "from-indigo-500 to-indigo-600 shadow-indigo-200/50",
+    emerald: "from-emerald-500 to-emerald-600 shadow-emerald-200/50",
     blue: "from-blue-500 to-blue-600 shadow-blue-200/50",
     amber: "from-amber-500 to-amber-600 shadow-amber-200/50",
     green: "from-emerald-500 to-emerald-600 shadow-emerald-200/50",
@@ -156,10 +158,10 @@ function VoucherStatCard({ title, value, description, icon: Icon, color }: any) 
   )
 }
 
-function VouchersPageSkeleton() {
+function ExpensesPageSkeleton() {
   return (
     <div className="space-y-6 py-5 px-4">
-      <Skeleton className="h-[160px] w-full rounded-xl bg-gradient-to-r from-indigo-400/70 to-violet-400/70" />
+      <Skeleton className="h-[160px] w-full rounded-xl bg-gradient-to-r from-emerald-400/70 to-teal-400/70" />
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {Array(4).fill(0).map((_, i) => (

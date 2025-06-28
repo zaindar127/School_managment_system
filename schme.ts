@@ -348,3 +348,27 @@ export const attendanceReports = pgTable('attendance_reports', {
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const expenses = pgTable("expenses", {
+  schoolid: uuid("schoolid").notNull(),                          // ID of the school this expense belongs to
+  id: uuid("id").defaultRandom().primaryKey(),                   // Primary key
+  name: text("name").notNull(),                                  // Expense name/title
+  discription: text("discription"),                              // Description of the expense
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(), // Expense amount
+  type: text("type").notNull(),                                  // Cash, bank, etc.
+  purpose: text("purpose").notNull(),                            // Purpose or category
+  date: timestamp("date").defaultNow(),                          // Date of the expense
+  status: text("status").default("pending").notNull(),           // Status: pending, approved, etc.
+})

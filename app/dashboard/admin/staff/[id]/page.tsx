@@ -6,13 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { FileText, Printer } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { generatePDF } from "@/lib/pdf-generator"
 
 export default function StaffDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { toast } = useToast()
   const [staff, setStaff] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -62,9 +61,7 @@ export default function StaffDetailPage() {
       if (foundStaff) {
         setStaff(foundStaff)
       } else {
-        toast({
-          variant: "destructive",
-          title: "Staff member not found",
+        toast.error("Staff member not found", {
           description: "The requested staff member could not be found.",
         })
         router.push("/staff")
@@ -74,7 +71,7 @@ export default function StaffDetailPage() {
     }
 
     fetchData()
-  }, [params.id, router, toast])
+  }, [params.id, router])
 
   if (isLoading) {
     return (

@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -27,7 +27,6 @@ import {
 export function Header() {
   const router = useRouter()
   const pathname = usePathname()
-  const { toast } = useToast()
   const [user, setUser] = useState<any>(null)
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ label: string; href: string }>>([])
 
@@ -61,8 +60,7 @@ export function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem("user")
-    toast({
-      title: "Logged out successfully",
+    toast.success("Logged out successfully", {
       description: "You have been logged out of the system",
     })
     router.push("/login")

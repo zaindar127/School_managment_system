@@ -7,14 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CalendarIcon, FileText, Printer, ArrowLeft, User, Phone, MapPin, Pencil, GraduationCap, BookOpen, Calendar, DollarSign, BadgeCheck, Receipt, CreditCard, Plus, Download } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { generatePDF } from "@/lib/pdf-generator"
 import { motion } from "framer-motion"
 
 export default function StudentDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { toast } = useToast()
   const [student, setStudent] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -61,9 +60,7 @@ export default function StudentDetailPage() {
       if (foundStudent) {
         setStudent(foundStudent)
       } else {
-        toast({
-          variant: "destructive",
-          title: "Student not found",
+        toast.error("Student not found", {
           description: "The requested student could not be found.",
         })
         router.push("/students")
@@ -73,7 +70,7 @@ export default function StudentDetailPage() {
     }
 
     fetchData()
-  }, [params.id, router, toast])
+  }, [params.id, router])
 
   if (isLoading) {
     return (
@@ -251,7 +248,7 @@ export default function StudentDetailPage() {
                           <p className="font-medium">{student.gender}</p>
                         </div>
                         <div>
-                          <span className="text-sm text-muted-foreground block">Date of Birth</span>
+                          <span className="text-sm text-muted-foreground block pt-2">Date of Birth</span>
                           <p className="font-medium">{student.dateOfBirth}</p>
                         </div>
                       </div>

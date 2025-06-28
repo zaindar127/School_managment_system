@@ -6,7 +6,7 @@ import { Calendar, FileText, GraduationCap, Bell, Clock, ArrowRight, AlertCircle
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "framer-motion"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { format } from "date-fns"
 import type { Event } from "./admin-events-management"
@@ -16,7 +16,6 @@ interface TeacherEvent extends Event {
 }
 
 export function TeacherUpcomingEvents() {
-  const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [events, setEvents] = useState<TeacherEvent[]>([])
 
@@ -99,11 +98,15 @@ export function TeacherUpcomingEvents() {
     // Show toast notification
     const event = events.find(e => e.id === id)
     if (event) {
-      toast({
-        title: event.reminder ? "Reminder removed" : "Alert set",
-        description: `${event.reminder ? "Removed" : "Set"} alert for ${event.title} on ${format(new Date(event.date), "MMM d, yyyy")}`,
-        variant: event.reminder ? "destructive" : "default",
-      })
+      if (event.reminder) {
+        toast.error("Reminder removed", {
+          description: `Removed alert for ${event.title} on ${format(new Date(event.date), "MMM d, yyyy")}`,
+        })
+      } else {
+        toast.success("Alert set", {
+          description: `Set alert for ${event.title} on ${format(new Date(event.date), "MMM d, yyyy")}`,
+        })
+      }
     }
   }
 

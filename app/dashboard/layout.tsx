@@ -6,7 +6,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
 import type { SidebarProps } from "@/components/sidebar"
 import { Header } from "@/components/header"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/sonner"
 import { useTheme } from "next-themes"
 
 export default function DashboardLayout({

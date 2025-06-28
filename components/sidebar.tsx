@@ -24,7 +24,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -44,7 +44,6 @@ export type SidebarProps = {
 export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const { toast } = useToast()
   const [isOpen, setIsOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
 
@@ -91,8 +90,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
 
   const handleLogout = () => {
     localStorage.removeItem("user")
-    toast({
-      title: "Logged out successfully",
+    toast.success("Logged out successfully", {
       description: "You have been logged out of the system",
     })
     router.push("/login")
@@ -110,8 +108,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
       { href: "/dashboard/admin/staff", label: "Staff", icon: Users },
       { href: "/dashboard/admin/attendance", label: "Attendance", icon: Calendar },
       { href: "/dashboard/admin/classes", label: "Classes", icon: School },
-      { href: "/dashboard/admin/fees", label: "Fees", icon: Receipt },
-      { href: "/dashboard/admin/vouchers", label: "Vouchers", icon: FileText },
+      { href: "/dashboard/admin/finance", label: "Finance", icon: Receipt },
       { href: "/dashboard/admin/results", label: "Results", icon: BookOpen },
       { href: "/dashboard/admin/reports", label: "Reports", icon: BarChart3 },
       { href: "/dashboard/admin/setting", label: "Settings", icon: Settings },

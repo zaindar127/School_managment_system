@@ -116,7 +116,7 @@ export default function AdminDashboard() {
 
   const handleGenerateReport = () => {
     const reportData = [
-      { class: "Nursery", totalStudents: 45, attendanceRate: "93.3%", feeCollection: "PKR 112,500" },
+      { class: "Nursery", totalStudents: 45, attendanceRate: "93.3%", feeCollection: "PKR 1122,500" },
       { class: "Prep", totalStudents: 50, attendanceRate: "96.0%", feeCollection: "PKR 125,000" },
       { class: "One", totalStudents: 55, attendanceRate: "90.9%", feeCollection: "PKR 110,000" },
       { class: "Two", totalStudents: 48, attendanceRate: "93.8%", feeCollection: "PKR 120,000" },

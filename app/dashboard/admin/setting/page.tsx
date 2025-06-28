@@ -1,24 +1,26 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { useRouter } from "next/navigation"
 import * as z from "zod"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
-import { Save, Upload, School, Phone, MapPin, Trash, Info, ArrowLeft } from "lucide-react"
-
+import { Save, School, MapPin, Info, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Separator } from "@/components/ui/separator"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { useSession } from "@clerk/nextjs"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { updateSchoolSettings } from "@/db/actions/school"
+import { getAdminSchoolByClerkId } from "@/db/actions/admin_school"
+import SchoolLogoUploader from "@/components/SchoolLogoUploader"
+import { uploadToCloudinary } from '@/lib/cloudinary';
+import { TextShimmerWave } from "@/components/ui/text-shimmer-wave"
+import { completeOnboarding } from "@/db/actions/clerk"
 
 // Define the schema for school settings form
 const schoolSettingsSchema = z.object({
@@ -35,20 +37,41 @@ const schoolSettingsSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address.",
   }),
-  website: z.string().url({
-    message: "Please enter a valid URL.",
-  }).optional().or(z.literal("")),
+  website: z.string()
+    .refine((val) => {
+      if (!val) return true; // Allow empty string
+      // Add http:// if not present
+      const url = val.startsWith('http://') || val.startsWith('https://') 
+        ? val 
+        : `https://${val}`;
+      try {
+        new URL(url);
+        return true;
+      } catch {
+        return false;
+      }
+    }, {
+      message: "Please enter a valid website URL (e.g., school.com or https://school.com)",
+    })
+    .optional()
+    .or(z.literal("")),
 })
 
 type SchoolSettingsFormValues = z.infer<typeof schoolSettingsSchema>
 
 export default function SettingsPage() {
-  const router = useRouter()
+  const { session } = useSession()
   const [isLoading, setIsLoading] = useState(false)
-  const [logoFile, setLogoFile] = useState<File | null>(null)
-  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [showOnboardingDialog, setShowOnboardingDialog] = useState(false)
+  const [schoolId, setSchoolId] = useState<string | null>(null)
+  const [currentLogo, setCurrentLogo] = useState<string | null>(null)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
+  const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null)
+  const [shouldRemoveLogo, setShouldRemoveLogo] = useState(false)
+  const [showLoadingOverlay, setShowLoadingOverlay] = useState(false)
+  const [loadingMessage, setLoadingMessage] = useState("Loading school data...")
   
-  // Initialize form with default values
+  // Initialize form with empty values
   const form = useForm<SchoolSettingsFormValues>({
     resolver: zodResolver(schoolSettingsSchema),
     defaultValues: {
@@ -61,6 +84,69 @@ export default function SettingsPage() {
     },
   })
 
+  // Memoize fetchSchoolData with useCallback
+  const fetchSchoolData = useCallback(async () => {
+    if (!session?.user?.id) return;
+    
+    try {
+      setIsInitialLoading(true);
+      // Show loading overlay with appropriate message
+      setShowLoadingOverlay(true);
+      setLoadingMessage("Loading school data...");
+      
+      const result = await getAdminSchoolByClerkId(session.user.id);
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      const adminSchool = result.data;
+      if (adminSchool && adminSchool.schoolId) {
+        console.log('School data to populate form:', adminSchool.school);
+        
+        // Set school ID and logo
+        setSchoolId(adminSchool.schoolId);
+        setCurrentLogo(adminSchool.school?.logo || null);
+        
+        // Reset form with school data, ensuring undefined values are converted to empty strings
+        form.reset({
+          schoolName: adminSchool.school?.name || "",
+          schoolAddress: adminSchool.school?.address || "",
+          primaryPhone: adminSchool.school?.primaryPhone || "",
+          secondaryPhone: adminSchool.school?.secondaryPhone || "",
+          email: adminSchool.school?.email || "",
+          website: adminSchool.school?.website || "",
+        }, { keepValues: false }); // Use false to ensure values are updated from DB
+        
+        toast.success("School data loaded successfully");
+      } else {
+        toast.warning("No school data found");
+      }
+    } catch (error) {
+      console.error('Error fetching school data:', error);
+      toast.error("Failed to load school data");
+    } finally {
+      setIsInitialLoading(false);
+      // Hide loading overlay
+      setShowLoadingOverlay(false);
+    }
+  }, [session?.user?.id]); // Only session?.user?.id as dependency
+
+  // Fetch school data on component mount
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchSchoolData();
+    }
+  }, [session?.user?.id, fetchSchoolData]);
+  
+  // Check if user is in onboarding process
+  useEffect(() => {
+    const onboarding = session?.user?.publicMetadata?.onboarding as boolean | undefined
+    if (onboarding === true) {
+      setShowOnboardingDialog(true)
+    }
+  }, [session])
+  
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -81,334 +167,350 @@ export default function SettingsPage() {
     }
   }
 
-  // Load existing settings on component mount
-  useEffect(() => {
-    const loadSettings = async () => {
-      setIsLoading(true)
-      try {
-        // Simulate API call to fetch school settings
-        // Replace with actual API call when backend is available
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        // Mock data - replace with actual API response
-        const mockSettings = {
-          schoolName: "Global Excellence Academy",
-          schoolAddress: "123 Education Street, Knowledge City, 54000",
-          primaryPhone: "+92123456789",
-          secondaryPhone: "+92198765432",
-          email: "info@globalexcellence.edu",
-          website: "https://www.globalexcellence.edu",
-          logoUrl: "/school-logo.png"
-        }
-        
-        // Set form values
-        form.reset({
-          schoolName: mockSettings.schoolName,
-          schoolAddress: mockSettings.schoolAddress,
-          primaryPhone: mockSettings.primaryPhone,
-          secondaryPhone: mockSettings.secondaryPhone,
-          email: mockSettings.email,
-          website: mockSettings.website,
-        })
-        
-        // Set logo preview if available
-        if (mockSettings.logoUrl) {
-          setLogoPreview(mockSettings.logoUrl)
-        }
-      } catch (error) {
-        console.error("Error loading settings:", error)
-        toast.error("Failed to load settings")
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    
-    loadSettings()
-  }, [form])
-
-  // Handle logo file selection
-  const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+  // Modify the handleLogoFileSelect function
+  const handleLogoFileSelect = (file: File | null) => {
+    // Only update state, don't trigger any form submission
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Logo file size should not exceed 5MB")
-        return
-      }
-      
-      if (!file.type.startsWith('image/')) {
-        toast.error("Please select an image file")
-        return
-      }
-      
-      setLogoFile(file)
-      const fileReader = new FileReader()
-      fileReader.onload = (e) => {
-        setLogoPreview(e.target?.result as string)
-      }
-      fileReader.readAsDataURL(file)
+      console.log("File selected, updating state without submitting form", file.name);
+      // Use requestAnimationFrame to ensure UI updates before any state changes
+      requestAnimationFrame(() => {
+        setSelectedLogoFile(file);
+        setShouldRemoveLogo(false);
+      });
     }
-  }
+  };
+ 
+  // Modify the handleLogoRemove function
+  const handleLogoRemove = () => {
+    console.log("Logo removal requested, updating state without submitting form");
+    // Use requestAnimationFrame to ensure UI updates before any state changes
+    requestAnimationFrame(() => {
+      setSelectedLogoFile(null);
+      setShouldRemoveLogo(true);
+    });
+  };
 
-  // Handle form submission
-  const onSubmit = async (data: SchoolSettingsFormValues) => {
-    setIsLoading(true)
+  // Handle form submission using a form handler instead of onSubmit directly
+  const handleSubmitForm = form.handleSubmit(async (data: SchoolSettingsFormValues) => {
+    if (!schoolId) {
+      toast.error("School ID not found");
+      return;
+    }
+
+    // Show loading overlay with appropriate message
+    setShowLoadingOverlay(true);
+    setLoadingMessage("Saving changes...");
+    setIsLoading(true);
+    
     try {
-      // Simulate API call to save settings
-      // Replace with actual API call when backend is available
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      // Handle logo upload if file is selected
-      if (logoFile) {
-        // Upload logic would go here
-        console.log("Logo file to upload:", logoFile)
-      }
-      
-      console.log("Submitted settings:", data)
-      toast.success("School settings updated successfully")
-    } catch (error) {
-      console.error("Error saving settings:", error)
-      toast.error("Failed to update settings")
-    } finally {
-      setIsLoading(false)
-    }
-  }
+      let logoUrl: string | undefined = undefined;
 
-  const removeLogo = () => {
-    setLogoFile(null)
-    setLogoPreview(null)
+      // Handle logo upload if there's a new file
+      if (selectedLogoFile) {
+        setLoadingMessage("Uploading logo...");
+        const uploadedUrl = await uploadToCloudinary(selectedLogoFile, 'school_logos');
+        logoUrl = uploadedUrl;
+      }
+
+      // Format website URL if needed
+      let formattedWebsite = data.website;
+      if (formattedWebsite && !formattedWebsite.match(/^https?:\/\//)) {
+        formattedWebsite = `https://${formattedWebsite}`;
+      }
+
+      setLoadingMessage("Updating school settings...");
+      // Update school settings including logo
+      const result = await updateSchoolSettings(schoolId, {
+        name: data.schoolName,
+        address: data.schoolAddress,
+        primaryPhone: data.primaryPhone,
+        secondaryPhone: data.secondaryPhone,
+        email: data.email,
+        website: formattedWebsite || undefined,
+        logo: shouldRemoveLogo ? "" : (logoUrl || undefined), // Remove logo if shouldRemoveLogo is true
+      });
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      // Update local state with the new data
+      if (result.updatedData) {
+        // Update form values if they were changed
+        if (result.updatedData.name !== undefined) {
+          form.setValue('schoolName', result.updatedData.name);
+        }
+        if (result.updatedData.address !== undefined) {
+          form.setValue('schoolAddress', result.updatedData.address);
+        }
+        if (result.updatedData.primaryPhone !== undefined) {
+          form.setValue('primaryPhone', result.updatedData.primaryPhone);
+        }
+        if (result.updatedData.secondaryPhone !== undefined) {
+          form.setValue('secondaryPhone', result.updatedData.secondaryPhone || '');
+        }
+        if (result.updatedData.email !== undefined) {
+          form.setValue('email', result.updatedData.email);
+        }
+        if (result.updatedData.website !== undefined) {
+          form.setValue('website', result.updatedData.website || '');
+        }
+        if (result.updatedData.logo !== undefined) {
+          setCurrentLogo(result.updatedData.logo || null);
+        }
+      }
+
+      // Reset logo-related states
+      setSelectedLogoFile(null);
+      setShouldRemoveLogo(false);
+
+      // Update onboarding status in Clerk metadata
+      setLoadingMessage("Completing setup...");
+      const onboardingResult = await completeOnboarding();
+      
+      if (!onboardingResult.success) {
+        console.error("Failed to update onboarding status:", onboardingResult.error);
+        // Don't throw error here, as school settings were saved successfully
+        toast.warning("School settings saved, but onboarding status could not be updated");
+      } else {
+        // Close the onboarding dialog if it's open
+        setShowOnboardingDialog(false);
+        toast.success("School settings updated successfully. You can now access all features.");
+      }
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      toast.error("Failed to update settings");
+    } finally {
+      setIsLoading(false);
+      // Hide loading overlay
+      setShowLoadingOverlay(false);
+    }
+  });
+
+  if (isInitialLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-2">
+          <TextShimmerWave className="text-2xl font-medium" duration={1.2}>
+            Loading school data...
+          </TextShimmerWave>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <motion.div
-      className="space-y-6"
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-    >
-      {/* Back Button */}
-      <motion.div variants={itemVariants}>
-        <Button
-          onClick={() => router.push("/dashboard/admin")}
-          variant="ghost"
-          className="mb-4 flex items-center gap-1 text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Back to Dashboard</span>
-        </Button>
-      </motion.div>
+    <>
+      {showLoadingOverlay && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="flex flex-col items-center">
+            <TextShimmerWave 
+              className="text-2xl font-medium" 
+              duration={1.2}
+            >
+              {loadingMessage}
+            </TextShimmerWave>
+          </div>
+        </div>
+      )}
 
-      <motion.div variants={itemVariants} className="flex flex-col gap-2">
-        <h2 className="text-3xl font-bold tracking-tight">School Settings</h2>
-        <p className="text-muted-foreground">
-          Manage your school information and contact details
-        </p>
-      </motion.div>
+      <Dialog open={showOnboardingDialog} onOpenChange={setShowOnboardingDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Welcome to the School Management System</DialogTitle>
+            <DialogDescription>
+              Complete your school profile to get started. This information is required
+              before you can access other parts of the system.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col space-y-4 pt-2">
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>Required First-Time Setup</AlertTitle>
+              <AlertDescription>
+                Please provide your school name, contact information, and logo (optional).
+                After saving these details, you&apos;ll be able to access all administrative features.
+              </AlertDescription>
+            </Alert>
+            <p className="text-sm text-muted-foreground">
+              Tip: You can update this information anytime from the Settings page.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowOnboardingDialog(false)}>
+              Got it, let&apos;s get started
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* General Information Section */}
-      <motion.div variants={itemVariants}>
-        <h3 className="text-2xl font-semibold mb-2 flex items-center gap-2"><School className="h-5 w-5" /> General Information</h3>
-        <Alert className="mb-4">
-          <Info className="h-4 w-4" />
-          <AlertTitle>Important</AlertTitle>
-          <AlertDescription>
-            The school name and logo will appear on reports, certificates, and communications sent to parents and students.
-          </AlertDescription>
-        </Alert>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <School className="h-5 w-5" />
-              School Identity
-            </CardTitle>
-            <CardDescription>
-              Update your school name and logo
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="schoolName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>School Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter school name" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        The official name of your educational institution
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div>
-                  <Label htmlFor="logo-upload">School Logo</Label>
-                  <div className="mt-2 flex flex-col items-center gap-4 sm:flex-row">
-                    <div className="flex h-32 w-32 items-center justify-center rounded-md border border-dashed">
-                      {logoPreview ? (
-                        <div className="relative h-28 w-28">
-                          <Avatar className="h-28 w-28">
-                            <AvatarImage src={logoPreview} alt="School logo" />
-                            <AvatarFallback>Logo</AvatarFallback>
-                          </Avatar>
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            className="absolute -right-2 -top-2 h-6 w-6 rounded-full"
-                            onClick={removeLogo}
-                            type="button"
-                          >
-                            <Trash className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <School className="h-10 w-10 text-muted-foreground" />
+      <motion.div
+        className="space-y-6"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        {/* General Information Section */}
+        <motion.div variants={itemVariants}>
+          <h3 className="text-2xl font-semibold mb-2 flex items-center gap-2">
+            <School className="h-5 w-5" /> 
+            General Information
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="ml-2 h-8 w-8" 
+              onClick={() => fetchSchoolData()}
+              disabled={isInitialLoading || isLoading}
+              title="Refresh school data"
+            >
+              <RefreshCw className={`h-4 w-4 ${isInitialLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </h3>
+          <Alert className="mb-4">
+            <Info className="h-4 w-4" />
+            <AlertTitle>Important</AlertTitle>
+            <AlertDescription>
+              The school name and logo will appear on reports, certificates, and communications sent to parents and students.
+            </AlertDescription>
+          </Alert>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                School Identity & Contact Information
+              </CardTitle>
+              <CardDescription>
+                Update your school profile, contact, and logo
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Form {...form}>
+                <form onSubmit={handleSubmitForm} className="space-y-6">
+                  {/* School Name */}
+                  <FormField
+                    control={form.control}
+                    name="schoolName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>School Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter school name" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          The official name of your educational institution
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {/* School Logo */}
+                  <SchoolLogoUploader 
+                    currentLogo={currentLogo}
+                    onFileSelect={handleLogoFileSelect}
+                    onRemove={handleLogoRemove}
+                    disabled={isLoading}
+                  />
+                  {/* School Address */}
+                  <FormField
+                    control={form.control}
+                    name="schoolAddress"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>School Address</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Enter complete school address" 
+                            className="min-h-[100px]" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {/* Phones */}
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="primaryPhone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Primary Phone</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., +92123456789" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <Button asChild variant="outline" type="button">
-                          <label htmlFor="logo-upload" className="cursor-pointer">
-                            <Upload className="mr-2 h-4 w-4" />
-                            Upload Logo
-                          </label>
-                        </Button>
-                        <Input
-                          id="logo-upload"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleLogoChange}
-                        />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Recommended size: 512x512px. Max 5MB. PNG or JPG format.
-                      </p>
-                    </div>
+                    />
+                    <FormField
+                      control={form.control}
+                      name="secondaryPhone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Secondary Phone (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., +92123456789" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+                  {/* Email & Website */}
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email Address</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., info@school.edu" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="website"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Website (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., https://www.school.edu" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  {/* Save Button */}
+                  <div className="flex justify-end">
+                    <Button 
+                      disabled={isLoading}
+                      className="min-w-[120px]"
+                      type="submit"
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center gap-2">
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          Saving...
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-2">
+                          <Save className="h-4 w-4" />
+                          Save Changes
+                        </span>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </motion.div>
       </motion.div>
-
-      {/* Contact Information Section */}
-      <motion.div variants={itemVariants}>
-        <h3 className="text-2xl font-semibold mb-2 flex items-center gap-2"><MapPin className="h-5 w-5" /> Contact Information</h3>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Contact Details
-            </CardTitle>
-            <CardDescription>
-              Update your school address and contact information
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="schoolAddress"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>School Address</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Enter complete school address" 
-                          className="min-h-[100px]" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="grid gap-6 md:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="primaryPhone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Primary Phone</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., +92123456789" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="secondaryPhone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Secondary Phone (Optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., +92123456789" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email Address</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., info@school.edu" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="website"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Website (Optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., https://www.school.edu" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      <motion.div variants={itemVariants} className="flex justify-end">
-        <Button 
-          onClick={form.handleSubmit(onSubmit)} 
-          disabled={isLoading}
-          className="min-w-[120px]"
-        >
-          {isLoading ? (
-            <span className="flex items-center gap-2">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              Saving...
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <Save className="h-4 w-4" />
-              Save Changes
-            </span>
-          )}
-        </Button>
-      </motion.div>
-    </motion.div>
+    </>
   )
 }

@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { generatePDF } from "@/lib/pdf-generator"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { motion } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
@@ -22,7 +22,6 @@ export function TeacherAttendanceTracker({ className }: { className: string }) {
   const [attendanceData, setAttendanceData] = useState<any[]>([])
   const [isAttendanceMarked, setIsAttendanceMarked] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
 
   // Dummy data for students in the class
   const students =
@@ -60,8 +59,7 @@ export function TeacherAttendanceTracker({ className }: { className: string }) {
       setIsAttendanceMarked(true)
       setIsLoading(false)
       
-      toast({
-        title: "Attendance saved",
+      toast.success("Attendance saved", {
         description: `Attendance for Class ${className} on ${format(selectedDate, "PPP")} has been saved.`,
       })
     }, 1000)
